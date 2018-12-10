@@ -74,7 +74,10 @@ class Application(fix.Application):
         trade.setField(fix.OrdType(fix.OrdType_LIMIT)) #40=2 Limit order
         trade.setField(fix.OrderQty(100)) #38=100
         trade.setField(fix.Price(10))
-        trade.setField(fix.TransactTime(int(datetime.utcnow().strftime("%S"))))
+        t = fix.TransactTime()
+        t.setString(datetime.utcnow().strftime("%Y%m%d-%H:%M:%S.%f"))
+        trade.setField(t)
+        #trade.setField(fix.TransactTime(datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")))
         print(trade.toString())
         try:
             fix.Session.sendToTarget(trade, self.sessionID)
