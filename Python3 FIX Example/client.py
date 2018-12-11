@@ -74,13 +74,34 @@ class Application(fix.Application):
         trade.setField(fix.OrdType(fix.OrdType_LIMIT)) #40=2 Limit order
         trade.setField(fix.OrderQty(100)) #38=100
         trade.setField(fix.Price(10))
-        t = fix.TransactTime()
-        t.setString(datetime.utcnow().strftime("%Y%m%d-%H:%M:%S.%f"))
-        trade.setField(t)
+        #t = fix.TransactTime()
+        #t.setString(datetime.utcnow().strftime("%Y%m%d-%H:%M:%S.%f"))
+        #trade.setField(t)
         #trade.setField(fix.TransactTime(datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")))
+        trade.setField(fix.StringField(60,(datetime.utcnow().strftime ("%Y%m%d-%H:%M:%S.%f"))[:-3]))
         print(trade.toString())
         try:
             fix.Session.sendToTarget(trade, self.sessionID)
+        except (fix.ConfigError, fix.RuntimeError) as e:
+             print(e)
+
+    def cancel_order(self):
+        message = fix.Message();
+        header = message.getHeader();
+
+        header.setField(fix.BeginString("FIX.4.2"))
+        header.setField(fix.SenderCompID(TW))
+        header.setField(fix.TargetCompID("TARGET"))
+        header.setField(fix.MsgType("D"))
+        message.setField(fix.OrigClOrdID("123"))
+        message.setField(fix.ClOrdID("321"))
+        message.setField(fix.Symbol("LNUX"))
+        message.setField(fix.Side(Side_BUY))
+        message.setField(fix.Text("Cancel My Order!"))
+
+        print(message.toString())
+        try:
+            fix.Session.sendToTarget(message, self.sessionID)
         except (fix.ConfigError, fix.RuntimeError) as e:
              print(e)
 
