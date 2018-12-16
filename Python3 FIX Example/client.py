@@ -61,7 +61,7 @@ class Application(fix.Application):
     def genExecID(self):
         self.execID = self.execID+1
         return str(self.execID)
-    def put_order(self):
+    def new_order(self):
         print("Creating the following order: ")
         trade = fix.Message()
         trade.getHeader().setField(fix.BeginString(fix.BeginString_FIX42)) #
@@ -73,12 +73,13 @@ class Application(fix.Application):
         trade.setField(fix.Side(fix.Side_BUY)) #43=1 Buy
         trade.setField(fix.OrdType(fix.OrdType_LIMIT)) #40=2 Limit order
         trade.setField(fix.OrderQty(100)) #38=100
-        trade.setField(fix.Price(10))
+        trade.setField(fix.Price(10)) #44=10
         #t = fix.TransactTime()
         #t.setString(datetime.utcnow().strftime("%Y%m%d-%H:%M:%S.%f"))
         #trade.setField(t)
         #trade.setField(fix.TransactTime(datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")))
-        trade.setField(fix.StringField(60,(datetime.utcnow().strftime ("%Y%m%d-%H:%M:%S.%f"))[:-3]))
+        trade.setField(fix.StringField(60,(datetime.utcnow().strftime ("%Y%m%d-%H:%M:%S.%f"))[:-3]))  #60 TransactTime, not supported in python, so use tag number
+        trade.setField(fix.Text("New Order!"))  #58 text
         print(trade.toString())
         try:
             fix.Session.sendToTarget(trade, self.sessionID)
@@ -86,25 +87,22 @@ class Application(fix.Application):
              print(e)
 
     def cancel_order(self):
-        message = fix.Message();
-        header = message.getHeader();
-
-        header.setField(fix.BeginString("FIX.4.2"))
-        header.setField(fix.SenderCompID(TW))
-        header.setField(fix.TargetCompID("TARGET"))
-        header.setField(fix.MsgType("D"))
-        message.setField(fix.OrigClOrdID("123"))
-        message.setField(fix.ClOrdID("321"))
-        message.setField(fix.Symbol("LNUX"))
-        message.setField(fix.Side(Side_BUY))
-        message.setField(fix.Text("Cancel My Order!"))
-
+        message = fix.Message()
+        header = message.getHeader()
+        header.setField(fix.BeginString(fix.BeginString_FIX42))
+        header.setField(fix.MsgType(fix.MsgType_OrderCancelRequest)) #39=F
+        originalOrderId = str(int(self.genExecID()) - 1)
+        message.setField(fix.OrigClOrdID(originalOrderId))
+        message.setField(fix.ClOrdID(str(int(originalOrderId) + 1)))
+        message.setField(fix.Symbol('SMBL'))
+        message.setField(fix.Side(fix.Side_BUY))
+        message.setField(fix.StringField(60,(datetime.utcnow().strftime ("%Y%m%d-%H:%M:%S.%f"))[:-3]))  #60 TransactTime, not supported in python, so use tag number
+        message.setField(fix.Text("Cancel My Order!"))  #58 text
         print(message.toString())
         try:
             fix.Session.sendToTarget(message, self.sessionID)
         except (fix.ConfigError, fix.RuntimeError) as e:
-             print(e)
-
+            print(e)
 def main(config_file):
     try:
         #"C:\\allen\\quickfix-python-sample-master\\client.cfg"
@@ -118,15 +116,18 @@ def main(config_file):
         while 1:
                 myInput = input()
                 if myInput == '1':
-                    print("Putin Order")
-                    application.put_order()
+                    print("New Order")
+                    application.new_order()
                 if myInput == '2':
+                    print("Cancel Order")
+                    application.cancel_order()
+                if myInput == '3':
                     sys.exit(0)
                 if myInput == 'd':
                     import pdb
                     pdb.set_trace()
                 else:
-                    print("Valid input is 1 for order, 2 for exit")
+                    print("Valid input is 1 for new order, 2 for cancel order, 3 for exit")
                     continue
     except (fix.ConfigError, fix.RuntimeError) as e:
         print(e)
@@ -136,4 +137,4 @@ if __name__=='__main__':
     #parser.add_argument('file_name', type=str, help='Name of configuration file')
     #args = parser.parse_args()
     #main(args.file_name)
-    main("C:\\allen\\quickfix-python-sample-master\\client.cfg")
+    main("C:\\allen\\Python3-FIX\\client.cfg")
