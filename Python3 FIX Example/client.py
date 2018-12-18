@@ -128,7 +128,6 @@ class Application(fix.Application):
             print(e)
 def main(config_file):
     try:
-        #"C:\\allen\\quickfix-python-sample-master\\client.cfg"
         settings = fix.SessionSettings( config_file )
         application = Application()
         storeFactory = fix.FileStoreFactory( settings )
@@ -148,15 +147,15 @@ def main(config_file):
                     print("Get order status")
                     application.request_order()
                 if myInput == "4":
-                    sys.exit(0)
-                if myInput == "t":
                     print("Test unsupported msg type")
                     application.list_cancel_request()
+                if myInput == "5":
+                    sys.exit(0)
                 if myInput == "d":
                     import pdb
                     pdb.set_trace()
                 else:
-                    print("Valid input is 1 for new order, 2 for cancel order, 3 for exit")
+                    print("Valid input is 1 for new order, 2 for cancel order, 3 for order status, 4 for unsupported msg, 5 to exit")
                     continue
     except (fix.ConfigError, fix.RuntimeError) as e:
         print(e)
@@ -166,4 +165,3 @@ if __name__=='__main__':
     parser.add_argument('file_name', type=str, help='Name of configuration file')
     args = parser.parse_args()
     main(args.file_name)
-    #main("D:\\Temp\\Allen\\Python3 FIX Example\\client.cfg")

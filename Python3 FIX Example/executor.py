@@ -133,11 +133,17 @@ class Application(fix.Application):
         executionReport.setField( orderQty )
         executionReport.setField(fix.Text("New order accepted!"))
 
+        # Since FIX 4.3, ExecTransType is killed and the values are moved to ExecType
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
             executionReport.setField( fix.ExecTransType(fix.ExecTransType_NEW) )
 
+        # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
-            executionReport.setField( fix.ExecType(fix.ExecType_FILL) ) #150=FILL
+            if beginString.getValue() <= fix.BeginString_FIX42:
+                executionReport.setField( fix.ExecType(fix.ExecType_FILL) ) #150=2 FILL  (or 1 PARTIAL_FILL)
+            else:
+                # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
+                executionReport.setField( fix.ExecType(fix.ExecType_TRADE) ) #150=F TRADE 
             executionReport.setField( fix.LeavesQty(0) )
 
         return executionReport
@@ -173,11 +179,13 @@ class Application(fix.Application):
         executionReport.setField( clOrdID )
         executionReport.setField(fix.Text("Order cancelled!"))
 
+        # Since FIX 4.3, ExecTransType values are moved to ExecType
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
             executionReport.setField( fix.ExecTransType(fix.ExecTransType_CANCEL) )
-        
+
+        # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
-            executionReport.setField( fix.ExecType(fix.ExecType_CANCELED) ) #150=CANCELED
+            executionReport.setField( fix.ExecType(fix.ExecType_CANCELED) ) #150=4 CANCELED
             executionReport.setField( fix.LeavesQty(0) )  #151=0
 
         return executionReport
@@ -208,12 +216,18 @@ class Application(fix.Application):
         executionReport.setField(clOrdID)
         executionReport.setField(fix.Text("Order status retrieved!"))
 
+        # Since FIX 4.3, ExecTransType values are moved to ExecType
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
             executionReport.setField( fix.ExecTransType(fix.ExecTransType_STATUS) )
         
+        # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
-            executionReport.setField( fix.ExecType(fix.ExecType_CANCELED) ) #150=CANCELED
-            executionReport.setField( fix.LeavesQty(0) )  #151=0
+            if beginString.getValue() <= fix.BeginString_FIX42:
+                executionReport.setField( fix.ExecType(fix.ExecType_FILL) ) #150=2 FILL  (or 1 PARTIAL_FILL)
+            else:
+                # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
+                executionReport.setField( fix.ExecType(fix.ExecType_TRADE) ) #150=F TRADE 
+            executionReport.setField( fix.LeavesQty(0) )
 
         return executionReport
 
@@ -238,7 +252,7 @@ class Application(fix.Application):
         orderCancelReject.setField(clOrdID)
         orderCancelReject.setField(orderID)
         orderCancelReject.setField(origClOrdID)
-        orderCancelReject.setField(fix.OrdStatus(2))  #39 = 2 FILLED
+        orderCancelReject.setField(fix.OrdStatus(fix.OrdStatus_FILLED))  #39 = 2 FILLED
         orderCancelReject.setField(fix.CxlRejReason(0)) #102=0 TOO_LATE_TO_CANCEL
         orderCancelReject.setField(fix.CxlRejResponseTo(1)) #434=1  ORDER_CANCEL_REQUEST
 
@@ -255,7 +269,6 @@ class Application(fix.Application):
 def main(file_name):
 
     try:
-        # "C:\\allen\\quickfix-python-sample-master\\executor.cfg"
         settings = fix.SessionSettings(file_name)
         application = Application()
         storeFactory = fix.FileStoreFactory( settings )
@@ -275,4 +288,3 @@ if __name__=='__main__':
     parser.add_argument('file_name', type=str, help='Name of configuration file')
     args = parser.parse_args()
     main(args.file_name)
-    #main("D:\\Temp\\Allen\\Python3 FIX Example\\executor.cfg")
