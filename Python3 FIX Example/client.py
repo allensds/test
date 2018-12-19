@@ -128,11 +128,11 @@ class Application(fix.Application):
             print(e)
 def main(config_file):
     try:
-        settings = fix.SessionSettings( config_file )
+        settings = fix.SessionSettings(config_file)
         application = Application()
-        storeFactory = fix.FileStoreFactory( settings )
-        logFactory = fix.FileLogFactory( settings )
-        initiator = fix.SocketInitiator( application, storeFactory, settings, logFactory )
+        storeFactory = fix.FileStoreFactory(settings)
+        logFactory = fix.FileLogFactory(settings)
+        initiator = fix.SocketInitiator(application, storeFactory, settings, logFactory)
         initiator.start()
 
         while 1:

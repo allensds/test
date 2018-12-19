@@ -45,9 +45,9 @@ class Application(fix.Application):
         beginString = fix.BeginString()
         msgType = fix.MsgType()
         msgSeqNum = fix.MsgSeqNum()
-        message.getHeader().getField( beginString )
-        message.getHeader().getField( msgType )
-        message.getHeader().getField( msgSeqNum )
+        message.getHeader().getField(beginString)
+        message.getHeader().getField(msgType)
+        message.getHeader().getField(msgSeqNum)
 
         print("Message type = %s" % msgType.getString())
 
@@ -97,7 +97,7 @@ class Application(fix.Application):
     def getExecutionReportForNewOrder(self, message):
 
         beginString = fix.BeginString()
-        message.getHeader().getField( beginString )
+        message.getHeader().getField( beginString)
 
         symbol = fix.Symbol()
         side = fix.Side()
@@ -106,44 +106,44 @@ class Application(fix.Application):
         price = fix.Price()
         clOrdID = fix.ClOrdID()
             
-        message.getField( ordType )
+        message.getField(ordType)
         if ordType.getValue() != fix.OrdType_LIMIT:
-            raise fix.IncorrectTagValue( ordType.getField() )
+            raise fix.IncorrectTagValue(ordType.getField())
 
-        message.getField( symbol )
-        message.getField( side )
-        message.getField( orderQty )
-        message.getField( price )
-        message.getField( clOrdID )
+        message.getField(symbol)
+        message.getField(side)
+        message.getField(orderQty)
+        message.getField(price)
+        message.getField(clOrdID)
 
         executionReport = fix.Message()
-        executionReport.getHeader().setField( beginString )
-        executionReport.getHeader().setField( fix.MsgType(fix.MsgType_ExecutionReport) )
+        executionReport.getHeader().setField(beginString)
+        executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))
 
-        executionReport.setField( fix.OrderID(self.genOrderID()) )
-        executionReport.setField( fix.ExecID(self.genExecID()) )
-        executionReport.setField( fix.OrdStatus(fix.OrdStatus_FILLED) )
-        executionReport.setField( symbol )
-        executionReport.setField( side )
-        executionReport.setField( fix.CumQty(orderQty.getValue()) )
-        executionReport.setField( fix.AvgPx(price.getValue()) )
-        executionReport.setField( fix.LastShares(orderQty.getValue()) )
-        executionReport.setField( fix.LastPx(price.getValue()) )
-        executionReport.setField( clOrdID )
-        executionReport.setField( orderQty )
+        executionReport.setField(fix.OrderID(self.genOrderID()))
+        executionReport.setField(fix.ExecID(self.genExecID()))
+        executionReport.setField(fix.OrdStatus(fix.OrdStatus_FILLED))
+        executionReport.setField(symbol)
+        executionReport.setField(side)
+        executionReport.setField(fix.CumQty(orderQty.getValue()))
+        executionReport.setField(fix.AvgPx(price.getValue()))
+        executionReport.setField(fix.LastShares(orderQty.getValue()))
+        executionReport.setField(fix.LastPx(price.getValue()))
+        executionReport.setField(clOrdID)
+        executionReport.setField(orderQty)
         executionReport.setField(fix.Text("New order accepted!"))
 
         # Since FIX 4.3, ExecTransType is killed and the values are moved to ExecType
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
-            executionReport.setField( fix.ExecTransType(fix.ExecTransType_NEW) )
+            executionReport.setField(fix.ExecTransType(fix.ExecTransType_NEW))
 
         # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
             if beginString.getValue() <= fix.BeginString_FIX42:
-                executionReport.setField( fix.ExecType(fix.ExecType_FILL) ) #150=2 FILL  (or 1 PARTIAL_FILL)
+                executionReport.setField(fix.ExecType(fix.ExecType_FILL)) #150=2 FILL  (or 1 PARTIAL_FILL)
             else:
                 # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
-                executionReport.setField( fix.ExecType(fix.ExecType_TRADE) ) #150=F TRADE 
+                executionReport.setField(fix.ExecType(fix.ExecType_TRADE)) #150=F TRADE 
             executionReport.setField( fix.LeavesQty(0) )
 
         return executionReport
@@ -152,41 +152,41 @@ class Application(fix.Application):
     def getExecutionReportForCancelOrder(self, message):
 
         beginString = fix.BeginString()
-        message.getHeader().getField( beginString )
+        message.getHeader().getField(beginString)
 
         symbol = fix.Symbol()
         side = fix.Side()
         clOrdID = fix.ClOrdID()
             
-        message.getField( symbol )
-        message.getField( side )
-        message.getField( clOrdID )
+        message.getField(symbol)
+        message.getField(side)
+        message.getField(clOrdID)
 
         executionReport = fix.Message()
-        executionReport.getHeader().setField( beginString )
-        executionReport.getHeader().setField( fix.MsgType(fix.MsgType_ExecutionReport) )
+        executionReport.getHeader().setField(beginString)
+        executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))
 
-        executionReport.setField( fix.OrderID(self.genOrderID()) )
-        executionReport.setField( fix.ExecID(self.genExecID()) )
-        executionReport.setField( fix.OrdType(fix.OrdType_LIMIT) ) #40=2 Limit order
-        executionReport.setField( fix.OrderQty(100) ) #38=100
-        executionReport.setField( fix.Price(10) ) #44=10
-        executionReport.setField( fix.OrdStatus(fix.OrdStatus_FILLED) )
-        executionReport.setField( symbol )
-        executionReport.setField( side )
-        executionReport.setField( fix.AvgPx(10) ) #6=10
-        executionReport.setField( fix.CumQty(100) ) #14=100
-        executionReport.setField( clOrdID )
+        executionReport.setField(fix.OrderID(self.genOrderID()))
+        executionReport.setField(fix.ExecID(self.genExecID()))
+        executionReport.setField(fix.OrdType(fix.OrdType_LIMIT)) #40=2 Limit order
+        executionReport.setField(fix.OrderQty(100)) #38=100
+        executionReport.setField(fix.Price(10)) #44=10
+        executionReport.setField(fix.OrdStatus(fix.OrdStatus_FILLED))
+        executionReport.setField(symbol)
+        executionReport.setField(side)
+        executionReport.setField(fix.AvgPx(10)) #6=10
+        executionReport.setField(fix.CumQty(100)) #14=100
+        executionReport.setField(clOrdID )
         executionReport.setField(fix.Text("Order cancelled!"))
 
         # Since FIX 4.3, ExecTransType values are moved to ExecType
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
-            executionReport.setField( fix.ExecTransType(fix.ExecTransType_CANCEL) )
+            executionReport.setField(fix.ExecTransType(fix.ExecTransType_CANCEL))
 
         # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
-            executionReport.setField( fix.ExecType(fix.ExecType_CANCELED) ) #150=4 CANCELED
-            executionReport.setField( fix.LeavesQty(0) )  #151=0
+            executionReport.setField(fix.ExecType(fix.ExecType_CANCELED)) #150=4 CANCELED
+            executionReport.setField(fix.LeavesQty(0))  #151=0
 
         return executionReport
 
@@ -194,14 +194,14 @@ class Application(fix.Application):
     def getExecutionReportForStatusRequest(self, message):
 
         beginString = fix.BeginString()
-        message.getHeader().getField( beginString )
+        message.getHeader().getField(beginString)
 
         clOrdID = fix.ClOrdID()
-        message.getField( clOrdID )
+        message.getField(clOrdID)
 
         executionReport = fix.Message()
-        executionReport.getHeader().setField( beginString )
-        executionReport.getHeader().setField( fix.MsgType(fix.MsgType_ExecutionReport) )
+        executionReport.getHeader().setField(beginString)
+        executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))
 
         executionReport.setField(fix.Symbol("ABCD"))
         executionReport.setField(fix.Side(fix.Side_BUY))  #43=1 Buy
@@ -218,16 +218,16 @@ class Application(fix.Application):
 
         # Since FIX 4.3, ExecTransType values are moved to ExecType
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
-            executionReport.setField( fix.ExecTransType(fix.ExecTransType_STATUS) )
+            executionReport.setField(fix.ExecTransType(fix.ExecTransType_STATUS))
         
         # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
             if beginString.getValue() <= fix.BeginString_FIX42:
-                executionReport.setField( fix.ExecType(fix.ExecType_FILL) ) #150=2 FILL  (or 1 PARTIAL_FILL)
+                executionReport.setField(fix.ExecType(fix.ExecType_FILL)) #150=2 FILL  (or 1 PARTIAL_FILL)
             else:
                 # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
-                executionReport.setField( fix.ExecType(fix.ExecType_TRADE) ) #150=F TRADE 
-            executionReport.setField( fix.LeavesQty(0) )
+                executionReport.setField(fix.ExecType(fix.ExecType_TRADE)) #150=F TRADE 
+            executionReport.setField(fix.LeavesQty(0))
 
         return executionReport
 
@@ -241,13 +241,13 @@ class Application(fix.Application):
         orderID = fix.OrderID()
         origClOrdID = fix.OrigClOrdID()
 
-        message.getField( clOrdID )
-        message.getField( orderID )
-        message.getField( origClOrdID )
+        message.getField(clOrdID)
+        message.getField(orderID)
+        message.getField(origClOrdID)
 
         orderCancelReject = fix.Message()
-        orderCancelReject.getHeader().setField( beginString )
-        orderCancelReject.getHeader().setField( fix.MsgType(fix.MsgType_OrderCancelReject) )
+        orderCancelReject.getHeader().setField(beginString)
+        orderCancelReject.getHeader().setField(fix.MsgType(fix.MsgType_OrderCancelReject))
 
         orderCancelReject.setField(clOrdID)
         orderCancelReject.setField(orderID)
@@ -271,10 +271,10 @@ def main(file_name):
     try:
         settings = fix.SessionSettings(file_name)
         application = Application()
-        storeFactory = fix.FileStoreFactory( settings )
-        logFactory = fix.FileLogFactory( settings )
+        storeFactory = fix.FileStoreFactory(settings)
+        logFactory = fix.FileLogFactory(settings)
         print('creating acceptor')
-        acceptor = fix.SocketAcceptor( application, storeFactory, settings, logFactory )
+        acceptor = fix.SocketAcceptor(application, storeFactory, settings, logFactory)
         print('starting acceptor')
         acceptor.start()
 
