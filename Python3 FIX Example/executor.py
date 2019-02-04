@@ -3,8 +3,12 @@ import time
 import _thread
 import argparse
 import quickfix as fix
+import urllib3
+import simplejson as json
+from api.restapi import createOrder, authenticateMe
 
 ECHO_DEBUG=False
+SKIP_AUTHENTICATION=False
 if ECHO_DEBUG:
     from tools.echo import echo
 else:
@@ -14,28 +18,56 @@ else:
 class Application(fix.Application):
     orderID = 0
     execID = 0
+    accessKey = ""
+    secretKey = ""
 
     @echo
     def onCreate(self, sessionID): return
 
     @echo
-    def onLogon(self, sessionID): return
+    def onLogon(self, sessionID): 
+        print("logged on")
+        return
 
     @echo
     def onLogout(self, sessionID): return
 
     @echo
-    def toAdmin(self, sessionID, message): 
+    def toAdmin(self, message, sessionID): 
         print("Sending the following admin message: %s" % message.toString())
         return
 
     @echo
-    def fromAdmin(self, sessionID, message): 
+    def fromAdmin(self, message, sessionID):   
+        if SKIP_AUTHENTICATION:
+            print("Received the following admin message: %s" % message.toString())
+            return
+
+        beginString = fix.BeginString()
+        msgType = fix.MsgType()
+        msgSeqNum = fix.MsgSeqNum()
+         
+        message.getHeader().getField(beginString)
+        message.getHeader().getField(msgType)
+        message.getHeader().getField(msgSeqNum)
+
+        if msgType.getString() == fix.MsgType_Logon:
+            try:
+                response = authenticateMe('Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg', 'kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7')
+                jResponse = json.loads(response)
+                if 'error' in jResponse and jResponse['error']:
+                    raise fix.RejectLogon("wrong signature")
+            except KeyboardInterrupt:
+                return
+            except Exception as e:
+                print(e)
+                raise fix.RejectLogon("failed to authenticate on server. Please contact istox IT!")
+
         print("Received the following admin message: %s" % message.toString())
         return
 
     @echo
-    def toApp(self, sessionID, message): 
+    def toApp(self, message, sessionID): 
         print("Sending the following message: %s" % message.toString())
         return
 
@@ -53,7 +85,7 @@ class Application(fix.Application):
 
         if msgType.getString() == fix.MsgType_NewOrderSingle:
             print("New Order received")
-            executionReport = self.getExecutionReportForNewOrder(message)
+            executionReport = self.getExecutionReportForNewOrder2(message)
             print("Execution report to send: %s" % executionReport.toString())
             self.sendReport(executionReport, sessionID)
         elif msgType.getString() == fix.MsgType_OrderCancelRequest:
@@ -79,7 +111,7 @@ class Application(fix.Application):
             reject.getHeader().setField(fix.MsgType(fix.MsgType_Reject))
             reject.setField(fix.RefMsgType(msgType.getString()))
             reject.setField(fix.RefSeqNum(msgSeqNum.getValue())) #45 = RefSeqNum
-            reject.setField(fix.SessionRejectReason(11)) #373 = 11 INVALID_MSGTYPE
+            reject.setField(fix.SessionRejectReason(fix.SessionRejectReason_INVALID_MSGTYPE)) #373 = 11 INVALID_MSGTYPE
             reject.setField(fix.Text("iSTOX FIX does not support this message type")) 
             self.sendReport(reject, sessionID)
 
@@ -147,6 +179,81 @@ class Application(fix.Application):
             executionReport.setField( fix.LeavesQty(0) )
 
         return executionReport
+
+    @echo
+    def getExecutionReportForNewOrder2(self, message):
+
+        beginString = fix.BeginString()
+        message.getHeader().getField(beginString)
+        msgSeqNum = fix.MsgSeqNum()
+        message.getHeader().getField(msgSeqNum)
+
+
+        symbol = fix.Symbol()
+        side = fix.Side()
+        ordType = fix.OrdType()
+        orderQty = fix.OrderQty()
+        price = fix.Price()
+        clOrdID = fix.ClOrdID()
+            
+        message.getField(ordType)
+        if ordType.getValue() != fix.OrdType_LIMIT:
+            raise fix.IncorrectTagValue(ordType.getField())
+
+        message.getField(symbol)
+        message.getField(side)
+        message.getField(orderQty)
+        message.getField(price)
+        message.getField(clOrdID)
+        
+        data = {}
+        data['market'] = symbol.getValue()
+        data['price'] = price.getValue()
+        data['side'] = 'buy' if side.getValue() == fix.Side_BUY else 'sell'
+        data['volume'] = orderQty.getValue()
+        response = createOrder('Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg', 'kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7', data)
+
+        jResponse = json.loads(response)
+        if 'error' in jResponse and jResponse['error']:
+            reject = fix.Message()
+            reject.getHeader().setField(beginString)
+            reject.getHeader().setField(fix.MsgType(fix.MsgType_Reject))
+            reject.setField(fix.RefMsgType(fix.MsgType_NewOrderSingle))
+            reject.setField(fix.RefSeqNum(msgSeqNum.getValue())) #45 = RefSeqNum
+            reject.setField(fix.SessionRejectReason(fix.SessionRejectReason_OTHER)) #373 = 99 OTHER
+            reject.setField(fix.Text(jResponse['message'])) 
+            return reject
+        else:        
+            executionReport = fix.Message()
+            executionReport.getHeader().setField(beginString)
+            executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))
+            executionReport.setField(fix.OrderID(str(jResponse['id'])))
+            executionReport.setField(fix.ExecID(self.genExecID()))
+            executionReport.setField(fix.OrdStatus(fix.OrdStatus_NEW))
+            executionReport.setField(symbol)
+            executionReport.setField(side)
+            executionReport.setField(fix.CumQty(orderQty.getValue()))
+            executionReport.setField(fix.AvgPx(price.getValue()))
+            executionReport.setField(fix.LastShares(orderQty.getValue()))
+            executionReport.setField(fix.LastPx(price.getValue()))
+            executionReport.setField(clOrdID)
+            executionReport.setField(orderQty)
+            executionReport.setField(fix.Text("New order accepted!"))
+
+            # Since FIX 4.3, ExecTransType is killed and the values are moved to ExecType
+            if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
+                executionReport.setField(fix.ExecTransType(fix.ExecTransType_NEW))
+
+            # ExecType and LeavesQty fields only existsince FIX 4.1
+            if beginString.getValue() >= fix.BeginString_FIX41:
+                if beginString.getValue() <= fix.BeginString_FIX42:
+                    executionReport.setField(fix.ExecType(fix.ExecType_FILL)) #150=2 FILL  (or 1 PARTIAL_FILL)
+                else:
+                    # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
+                    executionReport.setField(fix.ExecType(fix.ExecType_TRADE)) #150=F TRADE 
+                executionReport.setField( fix.LeavesQty(0) )
+
+            return executionReport
 
     @echo
     def getExecutionReportForCancelOrder(self, message):
@@ -274,7 +381,7 @@ def main(file_name):
         storeFactory = fix.FileStoreFactory(settings)
         logFactory = fix.FileLogFactory(settings)
         print('creating acceptor')
-        acceptor = fix.SocketAcceptor(application, storeFactory, settings, logFactory)
+        acceptor = fix.SocketAcceptor(application, storeFactory, settings, logFactory)    
         print('starting acceptor')
         acceptor.start()
 
