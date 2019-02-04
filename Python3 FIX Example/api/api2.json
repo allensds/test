@@ -1,0 +1,76 @@
+{
+    "Settings":
+        {
+            "URL": "http://192.168.33.10:3000/",
+            "AccessKey": "Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg",
+            "SecretKey": "kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7"
+        },
+
+    "Cases":[
+        {
+            "Verb": "POST",
+            "Method": "/v2/orders",
+            "Query":{
+                "market": "ethbtc",
+                "price": "9",
+                "side": "buy",
+                "volume": "1.5"
+            },
+            "Type": "Private"
+        },
+        {
+            "Verb": "POST",
+            "Method": "/v2/orders",
+            "Query":{
+                "market": "ethbtc",
+                "ord_type": "market",
+                "side": "buy",
+                "volume": "0.1"
+            },
+            "Type": "Private"
+        },
+        {
+            "Verb": "POST",
+            "Method": "/v2/orders/clear",
+            "Query":{
+                "market": "ethbtc",
+                "side": "buy"
+            },
+            "Type": "Private"
+        },
+        {
+            "Verb": "GET",
+            "Method": "/v2/order",
+            "Query":{
+                "id": "274"
+            },
+            "Type": "Private"
+        },
+        {
+            "Verb": "POST",
+            "Method": "/v2/order/delete",
+            "Query":{
+                "id": "First order returned by order query"
+            },
+            "Type": "Private"
+        },
+        {
+            "Verb": "POST",
+            "Method": "/v2/trades/my",
+            "Query":{
+                "market": "ethbtc"
+            },
+            "Type": "Private"
+        },
+        {
+            "Verb": "POST",
+            "Method": "/v2/k_with_pending_trades",
+            "Query":{
+                "market": "ethbtc",
+                "trade_id": "60"
+            },
+            "Type": "Public"
+        }
+    ]
+
+}
