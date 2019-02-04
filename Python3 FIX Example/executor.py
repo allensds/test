@@ -197,6 +197,7 @@ class Application(fix.Application):
         clOrdID = fix.ClOrdID()
             
         message.getField(ordType)
+        # todo handle market order
         if ordType.getValue() != fix.OrdType_LIMIT:
             raise fix.IncorrectTagValue(ordType.getField())
 
@@ -218,6 +219,7 @@ class Application(fix.Application):
         executionReport = fix.Message()
         executionReport.getHeader().setField(beginString)
         executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))  
+        # todo exec id?
         executionReport.setField(fix.ExecID(self.genExecID()))
         executionReport.setField(symbol)
         executionReport.setField(side)
@@ -225,6 +227,7 @@ class Application(fix.Application):
         executionReport.setField(fix.AvgPx(price.getValue()))
         executionReport.setField(fix.LastShares(orderQty.getValue()))
         executionReport.setField(fix.LastPx(price.getValue()))
+        # todo save Client order id to DB?
         executionReport.setField(clOrdID)
         executionReport.setField(orderQty)
 
@@ -236,6 +239,7 @@ class Application(fix.Application):
             executionReport.setField(fix.OrdRejReason(fix.OrdRejReason_UNKNOWN_SYMBOL))
         else:
             executionReport.setField(fix.OrderID(str(jResponse['id'])))
+            # todo check trades_count from json response and set FILL status?
             executionReport.setField(fix.OrdStatus(fix.OrdStatus_NEW))
             executionReport.setField(fix.Text('New order accpeted!'))
 
@@ -243,6 +247,7 @@ class Application(fix.Application):
         if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
             executionReport.setField(fix.ExecTransType(fix.ExecTransType_NEW))
 
+        # todo check trades_count from json response and set FILL status?
         # ExecType and LeavesQty fields only existsince FIX 4.1
         if beginString.getValue() >= fix.BeginString_FIX41:
             if beginString.getValue() <= fix.BeginString_FIX42:
