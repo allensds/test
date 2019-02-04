@@ -32,17 +32,29 @@ class Application(fix.Application):
             return
 
     @echo
-    def toAdmin(self, sessionID, message):
+    def toAdmin(self, message, sessionID):
+        
+        msgType = fix.MsgType()
+        message.getHeader().getField(msgType)
+
+        if msgType.getString() == fix.MsgType_Logon:
+            credential = '{"AccessKey": "Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg,"SecretKey: "kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7"}'
+            message.setField(fix.RawData(credential))
+            #message.setField(fix.RawData("test"))
+            message.setField(fix.RawDataLength(len(credential)))
+
+        
+
         print("Sending the following admin message: %s" % message.toString())
         return
 
     @echo
-    def fromAdmin(self, sessionID, message):
+    def fromAdmin(self, message, sessionID):
         print("Recieved the following admin message: %s" % message.toString())
         return
 
     @echo
-    def toApp(self, sessionID, message):
+    def toApp(self, message, sessionID):
         print("Sending the following message: %s" % message.toString())
         return
 
@@ -65,11 +77,11 @@ class Application(fix.Application):
         trade.setField(fix.ClOrdID(self.genOrderID())) #11=Unique order id
 
         trade.setField(fix.HandlInst(fix.HandlInst_MANUAL_ORDER_BEST_EXECUTION)) #21=3 (Manual order, best executiona)
-        trade.setField(fix.Symbol("ABCD")) #55=ABCD
+        trade.setField(fix.Symbol("ethbtc")) #55=ethbtc
         trade.setField(fix.Side(fix.Side_BUY)) #54=1 Buy
         trade.setField(fix.OrdType(fix.OrdType_LIMIT)) #40=2 Limit order
-        trade.setField(fix.OrderQty(100)) #38=100
-        trade.setField(fix.Price(10)) #44=10
+        trade.setField(fix.OrderQty(9)) #38=9
+        trade.setField(fix.Price(1.5)) #44=1.5
         trade.setField(fix.StringField(60,(datetime.utcnow().strftime ("%Y%m%d-%H:%M:%S.%f"))[:-3]))  #60 TransactTime, not supported in python, so use tag number
         trade.setField(fix.Text("New Order"))  #58 text
         print(trade.toString())
