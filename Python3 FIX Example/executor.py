@@ -214,7 +214,45 @@ class Application(fix.Application):
         response = createOrder('Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg', 'kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7', data)
 
         jResponse = json.loads(response)
+
+        executionReport = fix.Message()
+        executionReport.getHeader().setField(beginString)
+        executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))  
+        executionReport.setField(fix.ExecID(self.genExecID()))
+        executionReport.setField(symbol)
+        executionReport.setField(side)
+        executionReport.setField(fix.CumQty(orderQty.getValue()))
+        executionReport.setField(fix.AvgPx(price.getValue()))
+        executionReport.setField(fix.LastShares(orderQty.getValue()))
+        executionReport.setField(fix.LastPx(price.getValue()))
+        executionReport.setField(clOrdID)
+        executionReport.setField(orderQty)
+
         if 'error' in jResponse and jResponse['error']:
+            executionReport.setField(fix.OrderID("nil"))
+            executionReport.setField(fix.OrdStatus(fix.OrdStatus_REJECTED))
+            executionReport.setField(fix.Text(jResponse['error']['message']))
+            # todo Reject reason for each case
+            executionReport.setField(fix.OrdRejReason(fix.OrdRejReason_UNKNOWN_SYMBOL))
+        else:
+            executionReport.setField(fix.OrderID(str(jResponse['id'])))
+            executionReport.setField(fix.OrdStatus(fix.OrdStatus_NEW))
+            executionReport.setField(fix.Text('New order accpeted!'))
+
+         # Since FIX 4.3, ExecTransType is killed and the values are moved to ExecType
+        if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
+            executionReport.setField(fix.ExecTransType(fix.ExecTransType_NEW))
+
+        # ExecType and LeavesQty fields only existsince FIX 4.1
+        if beginString.getValue() >= fix.BeginString_FIX41:
+            if beginString.getValue() <= fix.BeginString_FIX42:
+                executionReport.setField(fix.ExecType(fix.ExecType_FILL)) #150=2 FILL  (or 1 PARTIAL_FILL)
+            else:
+                # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
+                executionReport.setField(fix.ExecType(fix.ExecType_TRADE)) #150=F TRADE 
+            executionReport.setField( fix.LeavesQty(0) )
+
+        """if 'error' in jResponse and jResponse['error']:
             reject = fix.Message()
             reject.getHeader().setField(beginString)
             reject.getHeader().setField(fix.MsgType(fix.MsgType_Reject))
@@ -222,38 +260,9 @@ class Application(fix.Application):
             reject.setField(fix.RefSeqNum(msgSeqNum.getValue())) #45 = RefSeqNum
             reject.setField(fix.SessionRejectReason(fix.SessionRejectReason_OTHER)) #373 = 99 OTHER
             reject.setField(fix.Text(jResponse['message'])) 
-            return reject
-        else:        
-            executionReport = fix.Message()
-            executionReport.getHeader().setField(beginString)
-            executionReport.getHeader().setField(fix.MsgType(fix.MsgType_ExecutionReport))
-            executionReport.setField(fix.OrderID(str(jResponse['id'])))
-            executionReport.setField(fix.ExecID(self.genExecID()))
-            executionReport.setField(fix.OrdStatus(fix.OrdStatus_NEW))
-            executionReport.setField(symbol)
-            executionReport.setField(side)
-            executionReport.setField(fix.CumQty(orderQty.getValue()))
-            executionReport.setField(fix.AvgPx(price.getValue()))
-            executionReport.setField(fix.LastShares(orderQty.getValue()))
-            executionReport.setField(fix.LastPx(price.getValue()))
-            executionReport.setField(clOrdID)
-            executionReport.setField(orderQty)
-            executionReport.setField(fix.Text("New order accepted!"))
+            return reject """ 
 
-            # Since FIX 4.3, ExecTransType is killed and the values are moved to ExecType
-            if beginString.getValue() == fix.BeginString_FIX40 or beginString.getValue() == fix.BeginString_FIX41 or beginString.getValue() == fix.BeginString_FIX42:
-                executionReport.setField(fix.ExecTransType(fix.ExecTransType_NEW))
-
-            # ExecType and LeavesQty fields only existsince FIX 4.1
-            if beginString.getValue() >= fix.BeginString_FIX41:
-                if beginString.getValue() <= fix.BeginString_FIX42:
-                    executionReport.setField(fix.ExecType(fix.ExecType_FILL)) #150=2 FILL  (or 1 PARTIAL_FILL)
-                else:
-                    # FILL and PARTIAL_FILL are removed and replaced by TRADE (F) since FIX 4.3 as these info can be retrieved from OrdStatus field
-                    executionReport.setField(fix.ExecType(fix.ExecType_TRADE)) #150=F TRADE 
-                executionReport.setField( fix.LeavesQty(0) )
-
-            return executionReport
+        return executionReport
 
     @echo
     def getExecutionReportForCancelOrder(self, message):
