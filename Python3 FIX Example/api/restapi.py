@@ -97,6 +97,41 @@ def createOrder(accessKey, secretKey, data):
     print(response.text)
     return response.text
 
+def getOrder(accessKey, secretKey, orderId):
+    query = 'access_key=' + accessKey
+    query += '&id=' + str(orderId)
+    query += '&tonce=' + getTonce()
+
+    load = '|'.join(['GET', '/api' + '/v2/order', query])
+    print('load=' + load)
+    sig = hmac.new(bytes(secretKey, 'utf-8'),
+                    bytes(load, 'utf-8'),
+                    hashlib.sha256).hexdigest()
+        
+    url = 'http://192.168.33.10:3000' + '/api' + '/v2/order' + '?' + '&'.join([query, 'signature=' + str(sig)])
+    print('url = ' + url)
+    response = requests.get(url)
+    print(response.text)
+    return response.text
+
+def cancelOrder(accessKey, secretKey, orderId):
+    query = 'access_key=' + accessKey
+    query += '&id=' + str(orderId)
+    query += '&tonce=' + getTonce()
+
+    load = '|'.join(['POST', '/api' + '/v2/order/delete', query])
+    print('load=' + load)
+    sig = hmac.new(bytes(secretKey, 'utf-8'),
+                    bytes(load, 'utf-8'),
+                    hashlib.sha256).hexdigest()
+        
+    url = 'http://192.168.33.10:3000' + '/api' + '/v2/order/delete' + '?' + '&'.join([query, 'signature=' + str(sig)])
+    print('url = ' + url)
+    data = {}
+    data['id'] = str(orderId)
+    response = requests.post(url,data)
+    print(response.text)
+    return response.text
 
 """ for index, case in enumerate(cases):
     results['Case ' + str(index+1)] = {'Input': case}
