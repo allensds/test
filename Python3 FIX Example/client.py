@@ -38,9 +38,8 @@ class Application(fix.Application):
         message.getHeader().getField(msgType)
 
         if msgType.getString() == fix.MsgType_Logon:
-            credential = '{"AccessKey": "Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg,"SecretKey: "kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7"}'
+            credential = '{"AccessKey": "Dsfzxj7juZTogLSvCERSKVP574Zw762nHJyquLxg", "SecretKey": "kLgHtx0jz7sdGtUPxnIQygqZBZM4zABTxpq8VDa7"}'
             message.setField(fix.RawData(credential))
-            #message.setField(fix.RawData("test"))
             message.setField(fix.RawDataLength(len(credential)))
 
         
@@ -99,7 +98,7 @@ class Application(fix.Application):
         originalOrderId = str(int(self.genOrderID()) - 1)
         message.setField(fix.OrigClOrdID(originalOrderId))
         message.setField(fix.ClOrdID(str(int(originalOrderId) + 1)))  #11=Unique order id
-        message.setField(fix.OrderID(originalOrderId))
+        message.setField(fix.OrderID("375"))
         message.setField(fix.Symbol("ABCD"))   #55=ABCD
         message.setField(fix.Side(fix.Side_BUY))  #54=1 Buy
         message.setField(fix.StringField(60,(datetime.utcnow().strftime ("%Y%m%d-%H:%M:%S.%f"))[:-3]))  #60 TransactTime, not supported in python, so use tag number
@@ -117,6 +116,7 @@ class Application(fix.Application):
         header.setField(fix.BeginString(fix.BeginString_FIX42))
         header.setField(fix.MsgType(fix.MsgType_OrderStatusRequest)) #35=H
         message.setField(fix.ClOrdID("*"))
+        message.setField(fix.OrderID("375"))
         message.setField(fix.Side(fix.Side_BUY)) #54=1 Buy
         message.setField(fix.Symbol("ABCD"))   #55=ABCD
         print(message.toString())
@@ -152,18 +152,18 @@ def main(config_file):
                 if myInput == "1":
                     print("New Order")
                     application.new_order()
-                if myInput == "2":
+                elif myInput == "2":
                     print("Cancel Order")
                     application.cancel_order()
-                if myInput == "3":
+                elif myInput == "3":
                     print("Get order status")
                     application.request_order()
-                if myInput == "4":
+                elif myInput == "4":
                     print("Test unsupported msg type")
                     application.list_cancel_request()
-                if myInput == "5":
+                elif myInput == "5":
                     sys.exit(0)
-                if myInput == "d":
+                elif myInput == "d":
                     import pdb
                     pdb.set_trace()
                 else:
